@@ -1,0 +1,137 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Entorno virtual (PESADO - no subir)
+.venv/
+venv/
+ENV/
+env/
+.conda/
+.virtualenv/
+
+# Modelos de Machine Learning (PESADOS)
+# *.pkl  # Modelos pkl se incluyen en el repositorio
+# *.pickle  # Modelos pickle se incluyen en el repositorio
+*.h5
+*.hdf5
+*.model
+# *.joblib  # Modelos joblib se incluyen en el repositorio
+*.sav
+*.onnx
+*.pb
+*.pth
+*.pt
+*.weights
+checkpoints/
+saved_models/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+.jupyter/
+*.nbconvert.ipynb
+
+# Datos y Datasets (PESADOS - no subir datos crudos)
+WESAD/
+*.zip
+*.tar.gz
+*.rar
+*.7z
+data/raw/
+data/processed/*.csv
+data/processed/*.parquet
+datasets/
+*.csv
+*.xlsx
+*.xls
+*.db
+*.sqlite
+*.sqlite3
+!data/sample/
+!requirements.txt
+
+# Archivos de configuración con credenciales
+.env
+.env.local
+*.secret
+config.ini
+credentials.json
+.aws/
+.azure/
+
+# Build y distribución
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+site-packages/
+wheels/
+*.whl
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.spyproject/
+.ropeproject/
+.mypy_cache/
+.dmypy.json
+.pytype/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# Logs y archivos temporales
+*.log
+*.tmp
+*.temp
+*.bak
+logs/
+*.out
+*.err
+
+# Testing y coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+*.cover
+.hypothesis/
+
+# Documentación generada
+docs/_build/
+site/
+
+# Tensorboard y MLflow
+runs/
+mlruns/
+tensorboard_logs/
+
+# Cache de frameworks ML
+.cache/
+.scikit_learn_data/
+*.tmp
+*.temp
+.cache/
+
+# APK compilados (Flutter)
+*.apk
+*.aab
+*.ipa
