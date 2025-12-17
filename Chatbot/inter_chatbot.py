@@ -2,20 +2,29 @@ import flet as ft
 import pyttsx3
 import threading
 import speech_recognition as sr
-import requests 
+import ollama  # Usar librería de Ollama directamente
 import json
+import sys
+import os
+from pathlib import Path
+import atexit
 import time
-
 
 # ================================
 # IMPORTACIÓN DE PROMPTS Y MÓDULOS
 # ================================
 try:
     import prompts  # Importamos el archivo con los dos prompts
-    print("Prompts cargados correctamente.")
-except ImportError:
+    print("✅ Prompts cargados correctamente.")
+    # Verificar que los prompts existen
+    if hasattr(prompts, 'PROMPT_CHARLA') and hasattr(prompts, 'PROMPT_GUIA'):
+        print(f"   - PROMPT_CHARLA: {len(prompts.PROMPT_CHARLA)} caracteres")
+        print(f"   - PROMPT_GUIA: {len(prompts.PROMPT_GUIA)} caracteres")
+    else:
+        print("⚠️ ADVERTENCIA: Los prompts no tienen los nombres correctos")
+except ImportError as e:
     prompts = None
-    print("Advertencia: No se encontró prompts.py")
+    print(f"❌ Advertencia: No se encontró prompts.py - {e}")
 
 try:
     import aprender
@@ -25,9 +34,36 @@ except ImportError:
     modulos_cargados = False
 
 # ================================
+# MODO DE APERTURA Y CONTROL DE INSTANCIA
+# ================================
+MODO_APERTURA = 'manual'  # Por defecto
+LOCK_FILE = Path(__file__).parent.parent / "MachineLearning" / ".chatbot_instance.lock"
+
+# Detectar si se pasó parámetro de modo
+if len(sys.argv) > 1:
+    for arg in sys.argv[1:]:
+        if arg.startswith('--modo='):
+            MODO_APERTURA = arg.split('=')[1]
+            print(f"🔧 Chatbot iniciado en modo: {MODO_APERTURA.upper()}")
+
+# ================================
 # CONFIGURACIÓN OLLAMA
 # ================================
-MODELO_OLLAMA = "llama3.2" 
+MODELO_OLLAMA = "llama3.2:3b-instruct-q8_0"  # Modelo específico instalado 
+
+# ================================
+# LIMPIEZA AL CERRAR
+# ================================
+def limpiar_al_cerrar():
+    """Elimina el archivo de bloqueo cuando se cierra el chatbot"""
+    if LOCK_FILE.exists():
+        try:
+            LOCK_FILE.unlink()
+            print("🧹 Instancia de chatbot cerrada correctamente")
+        except:
+            pass
+
+atexit.register(limpiar_al_cerrar)
 
 # ================================
 # GOOGLE SPEECH
@@ -92,10 +128,16 @@ def main(page: ft.Page):
     # ----------------
     # VARIABLES DE ESTADO
     # ----------------
-    contexto_ollama = []
+    contexto_ollama = []  # Limpiar contexto al inicio
     
     # Variable para controlar la voz (Audio)
-    voz_activa = True 
+    voz_activa = True
+    
+    # Variable para controlar si ya se mostró el mensaje inicial
+    mensaje_inicial_mostrado = False
+    
+    # Variable para el Router Pattern (Controla qué Prompt usar)
+    modo_guia_activo = False 
 
     # Variable para el Router Pattern (Controla qué Prompt usar)
     modo_guia_activo = False
@@ -169,19 +211,8 @@ def main(page: ft.Page):
         if not usuario and voz_activa:
             hablar(texto)
 
-     # -----------------------------------------------
-    # INTEGRACIÓN CON OLLAMA + ROUTER PATTERN
     # -----------------------------------------------
-    # -----------------------------------------------
-    def iniciativa_bot():
-        if time.time() - ultima_interaccion > 12:
-            agregar_mensaje(
-                "Sigo aquí contigo 🙂\n\n"
-                "¿Quieres contarme un poco más sobre cómo te sientes "
-                "o prefieres que te ayude con algo específico?"
-            )
-
-    # INTEGRACIÓN CON OLLAMA + ROUTER PATTERN (CON STREAMING)
+    # INTEGRACIÓN CON OLLAMA usando ollama.chat()
     # -----------------------------------------------
     def contactar_ollama(prompt_usuario):
         def _request():
@@ -192,8 +223,7 @@ def main(page: ft.Page):
             loading.visible = True
             page.update()
 
-            # LÓGICA DEL ROUTER (Igual que antes)
-            instrucciones_sistema = ""
+            # LÓGICA DEL ROUTER
             if prompts:
                 palabras_clave_malestar = [
                     "estrés", "estres", "mal", "ansiedad", "triste", "depre", 
@@ -205,20 +235,20 @@ def main(page: ft.Page):
                 
                 if modo_guia_activo:
                     print("Router: Usando PROMPT_GUIA")
-                    instrucciones_sistema = getattr(prompts, 'PROMPT_GUIA', "")
+                    instrucciones_sistema = prompts.PROMPT_GUIA
                 else:
                     print("Router: Usando PROMPT_CHARLA")
-                    instrucciones_sistema = getattr(prompts, 'PROMPT_CHARLA', "")
-
-            url = "http://localhost:11434/api/generate"
-            
-            data = {
-                "model": MODELO_OLLAMA,
-                "prompt": prompt_usuario,
-                "system": instrucciones_sistema,
-                "context": contexto_ollama,
-                "stream": True  # <--- ACTIVAMOS STREAMING
-            }
+                    instrucciones_sistema = prompts.PROMPT_CHARLA
+                
+                # Verificar que el prompt no esté vacío
+                if not instrucciones_sistema or len(instrucciones_sistema) < 50:
+                    print("⚠️ ADVERTENCIA: Prompt del sistema vacío o muy corto")
+                    instrucciones_sistema = prompts.PROMPT_CHARLA
+                    
+                print(f"📝 Longitud del prompt del sistema: {len(instrucciones_sistema)} caracteres")
+            else:
+                print("❌ ERROR: prompts.py no está cargado")
+                instrucciones_sistema = "Eres un asistente empático de bienestar emocional."
 
             try:
                 # 2. Creamos la burbuja de chat vacía visualmente
@@ -234,8 +264,8 @@ def main(page: ft.Page):
                             ft.Container(
                                 content=ft.Column(
                                     [
-                                        ft.Row([ft.Icon(ft.Icons.SMART_TOY, size=16), ft.Text("StressGuard_chat", weight="bold")], tight=True),
-                                        texto_markdown, # Aquí se escribirá el texto
+                                        ft.Row([ft.Icon(ft.Icons.SMART_TOY, size=16), ft.Text("StressWard", weight="bold")], tight=True),
+                                        texto_markdown,
                                     ]
                                 ),
                                 bgcolor=ft.Colors.GREEN_100,
@@ -247,34 +277,54 @@ def main(page: ft.Page):
                         alignment=ft.MainAxisAlignment.START,
                     )
                 )
-                page.update() # Mostramos la burbuja vacía
+                page.update()
 
-                # 3. Petición con Streaming
-                with requests.post(url, json=data, stream=True) as response:
-                    if response.status_code == 200:
-                        for line in response.iter_lines():
-                            if line:
-                                json_part = json.loads(line.decode('utf-8'))
-                                palabra = json_part.get("response", "")
-                                
-                                # Si es el final, guardamos el contexto
-                                if json_part.get("done"):
-                                    contexto_ollama = json_part.get("context", [])
-                                
-                                # Actualizamos el texto poco a poco
-                                respuesta_acumulada += palabra
-                                texto_markdown.value = respuesta_acumulada
-                                texto_markdown.update() # Actualizamos SOLO el texto (más rápido)
-                        
-                        # Al finalizar, hablamos todo el texto si la voz está activa
-                        if voz_activa:
-                            hablar(respuesta_acumulada)
-                    else:
-                        texto_markdown.value = f"Error: {response.status_code}"
+                # 3. Construir mensajes para ollama.chat()
+                messages = []
+                
+                # Agregar el prompt del sistema
+                messages.append({
+                    'role': 'system',
+                    'content': instrucciones_sistema
+                })
+                
+                # Agregar historial (si existe en contexto)
+                # Por ahora, solo agregamos el mensaje del usuario
+                messages.append({
+                    'role': 'user',
+                    'content': prompt_usuario
+                })
+                
+                # 4. Llamar a ollama.chat() con streaming
+                print(f"🚀 Enviando a Ollama: {MODELO_OLLAMA}")
+                
+                stream = ollama.chat(
+                    model=MODELO_OLLAMA,
+                    messages=messages,
+                    stream=True,
+                    options={
+                        'temperature': 0.6,
+                        'repeat_penalty': 1.1,
+                        'top_p': 0.9
+                    }
+                )
+                
+                # 5. Procesar streaming
+                for chunk in stream:
+                    if 'message' in chunk and 'content' in chunk['message']:
+                        palabra = chunk['message']['content']
+                        respuesta_acumulada += palabra
+                        texto_markdown.value = respuesta_acumulada
                         texto_markdown.update()
+                
+                # Al finalizar, hablamos todo el texto si la voz está activa
+                if voz_activa:
+                    hablar(respuesta_acumulada)
 
             except Exception as e:
-                agregar_mensaje(f"Error de conexión: {e}")
+                print(f"❌ Error al contactar Ollama: {e}")
+                texto_markdown.value = f"Error de conexión: {e}"
+                texto_markdown.update()
             
             loading.visible = False
             page.update()
@@ -298,11 +348,11 @@ def main(page: ft.Page):
             return
         
         # Opción para reiniciar el cerebro del bot
-        if clave == "borrar memoria":
+        if clave in ["borrar memoria", "reiniciar", "reset", "limpiar"]:
             nonlocal contexto_ollama, modo_guia_activo
             contexto_ollama = []
-            modo_guia_activo = False # Reiniciamos también el modo
-            agregar_mensaje("He olvidado nuestra conversación y reiniciado mi estado.")
+            modo_guia_activo = False
+            agregar_mensaje("🧹 He reiniciado mi memoria. Empecemos de nuevo. ¿Cómo te sientes?")
             return
 
         if clave == "tablaverdad":
@@ -429,6 +479,17 @@ def main(page: ft.Page):
 
         # --- CHAT VIEW ---
         if page.route == "/chat":
+            # Mostrar mensaje inicial si se abrió automáticamente por señal de estrés
+            nonlocal mensaje_inicial_mostrado
+            if MODO_APERTURA == 'automatico' and not mensaje_inicial_mostrado:
+                mensaje_inicial_mostrado = True
+                # Agregar mensaje del sistema
+                agregar_mensaje(
+                    "⚠️ **He detectado una señal de estrés en tus sensores biométricos.**\n\n"
+                    "¿Cómo te encuentras en este momento? Estoy aquí para ayudarte.",
+                    usuario=False
+                )
+            
             btn_microfono = ft.IconButton(
                 icon=ft.Icons.MIC,
                 icon_color=ft.Colors.BLUE_600,
@@ -505,4 +566,5 @@ def main(page: ft.Page):
     page.go("/")
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    print("🚀 Iniciando aplicación Flet...")
+    ft.app(target=main, view=ft.AppView.FLET_APP)

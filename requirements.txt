@@ -1,0 +1,21 @@
+# Dependencias principales del sistema StressGuard
+
+# Framework de UI
+flet>=0.21.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Gestión de procesos
+psutil>=5.9.0
+
+# Chatbot (reconocimiento de voz y TTS)
+pyttsx3>=2.90
+SpeechRecognition>=3.10.0
+
+# API y comunicaciones
+ollama>=0.6.0
+requests>=2.31.0
