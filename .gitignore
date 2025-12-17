@@ -33,12 +33,7 @@ checkpoints/
 saved_models/
 
 
-# Jupyter Notebook
-.ipynb_checkpoints/
-*.ipynb_checkpoints
-.jupyter/
-*.nbconvert.ipynb
-*.ipynb
+
 
 # Datos y Datasets (PESADOS - no subir datos crudos)
 WESAD/
