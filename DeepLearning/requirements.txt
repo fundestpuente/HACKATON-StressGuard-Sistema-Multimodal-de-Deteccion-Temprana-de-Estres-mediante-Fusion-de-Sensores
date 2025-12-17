@@ -10,11 +10,4 @@ scikit-learn==1.4.0
 h5py==3.10.0
 
 
-# Optional: Para mejor rendimiento con GPU
-#tensorflow-gpu==2.15.0  # Descomenta si tienes GPU con CUDA
 
-#1.- py -3.10 -m venv .venv
-#2.- .\.venv\Scripts\activate
-#3.- pip install -r requirements.txt
-#4.-cd model
-#5.- python train_stress_model.py
