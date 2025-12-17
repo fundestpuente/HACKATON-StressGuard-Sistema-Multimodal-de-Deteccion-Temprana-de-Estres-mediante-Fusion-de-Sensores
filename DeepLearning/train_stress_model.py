@@ -55,46 +55,46 @@ def main():
     detector.compile_model(learning_rate=0.0001)  # Reducido para mejor generalización
     
     # 4. Entrenar
-    print("\n🚀 PASO 4: Entrenando modelo...")
+    print("\n PASO 4: Entrenando modelo...")
     history = detector.train(
         X_train, y_train,
         X_val, y_val,
-        epochs=50,
+        epochs=100,
         batch_size=32,
-        checkpoint_path='best_stress_model.h5'
+        checkpoint_path='models/best_stress_model.h5'
     )
     
     # 5. Visualizar historial de entrenamiento
     print("\n PASO 5: Generando gráficas de entrenamiento...")
-    detector.plot_training_history(save_path='training_history.png')
+    detector.plot_training_history(save_path='resultados/training_history.png')
     
     # 6. Evaluar en test set
     print("\n PASO 6: Evaluando en conjunto de prueba...")
     y_pred, predictions = detector.evaluate(
         X_test, y_test,
-        save_path='confusion_matrix.png'
+        save_path='resultados/confusion_matrix.png'
     )
     
     # 7. Guardar modelo final
     print("\n PASO 7: Guardando modelo...")
-    detector.save_model('stress_model_final.h5')
+    detector.save_model('models/stress_model_final.h5')
     
     # Copiar el mejor modelo a stress_model.h5 (para detector_imagen.py)
     import shutil
-    if os.path.exists('best_stress_model.h5'):
-        shutil.copy('best_stress_model.h5', 'stress_model.h5')
-        print("   ✅ Copiado best_stress_model.h5 → stress_model.h5")
+    if os.path.exists('models/best_stress_model.h5'):
+        shutil.copy('models/best_stress_model.h5', 'stress_model.h5')
+        print("    Copiado best_stress_model.h5 → stress_model.h5")
     
     print("\n" + "="*60)
     print(" ENTRENAMIENTO COMPLETADO EXITOSAMENTE")
     print("="*60)
     print("\n Archivos generados:")
-    print("   - best_stress_model.h5 (mejor modelo durante entrenamiento)")
-    print("   - stress_model.h5 (para usar en detector)")
-    print("   - stress_model_final.h5 (modelo final)")
+    print("   - models/best_stress_model.h5 (mejor modelo durante entrenamiento)")
+    print("   - models/stress_model.h5 (para usar en detector)")
+    print("   - models/stress_model_final.h5 (modelo final)")
     print("   - training_history.png (gráficas de entrenamiento)")
     print("   - confusion_matrix.png (matriz de confusión)")
-    print("\n ⚡ El modelo está listo para usar!")
+    print("\n  El modelo está listo para usar!")
     print("   Ejecuta: py -3.12 detector_imagen.py")
     
     # 8. Resumen de métricas finales

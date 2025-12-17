@@ -6,6 +6,7 @@ from stress_detector_model import StressDetector
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from quick_fix import OptimizedStressPredictor
 
 def predict_single_image(model_path, image_path):
     """
@@ -49,7 +50,7 @@ def predict_single_image(model_path, image_path):
     plt.title(f"{result['class']} (Confianza: {result['confidence']:.2%})",
              fontsize=16, color=color, fontweight='bold')
     plt.tight_layout()
-    plt.savefig('prediction_result.png', dpi=300, bbox_inches='tight')
+    plt.savefig('resultados/prediction_result.png', dpi=300, bbox_inches='tight')
     plt.show()
     
     return result
@@ -92,7 +93,7 @@ def predict_with_faces(model_path, image_path):
     plt.axis('off')
     plt.title(f"Rostros detectados: {len(results)}", fontsize=16, fontweight='bold')
     plt.tight_layout()
-    plt.savefig('face_detection_result.png', dpi=300, bbox_inches='tight')
+    plt.savefig('resultados/face_detection_result.png', dpi=300, bbox_inches='tight')
     plt.show()
     
     return results, annotated_img
@@ -170,7 +171,7 @@ if __name__ == "__main__":
         print("  python predict_stress.py --batch <carpeta_con_imagenes>")
         sys.exit(1)
     
-    model_path = 'stress_model_final.h5'
+    model_path = 'models/stress_model_final.h5'
     
     if sys.argv[1] == '--faces':
         # Predicción con detección de rostros
@@ -189,3 +190,4 @@ if __name__ == "__main__":
     else:
         # Predicción simple
         predict_single_image(model_path, sys.argv[1])
+    

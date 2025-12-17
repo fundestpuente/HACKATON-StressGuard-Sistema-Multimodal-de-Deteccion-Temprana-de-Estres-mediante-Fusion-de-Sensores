@@ -157,6 +157,22 @@ class StressDetector:
         print(f"   Neutral: {neutral} ({neutral/total*100:.1f}%)")
         
         return images, labels, filenames
+    def _convert_to_rgb(self, img):
+        """
+        Convierte imagen a RGB independientemente del formato original
+        """
+        if len(img.shape) == 2:
+        # Escala de grises (1 canal)
+            return cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        elif img.shape[2] == 3:
+        # BGR (3 canales)
+             return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        elif img.shape[2] == 4:
+        # BGRA (4 canales)
+          return cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
+        else:
+        # Ya es RGB
+            return img
     
     def build_model(self, use_transfer_learning=True):
         """
@@ -253,7 +269,7 @@ class StressDetector:
         print("\n Resumen del modelo:")
         self.model.summary()
     
-    def train(self, X_train, y_train, X_val, y_val, epochs=50, 
+    def train(self, X_train, y_train, X_val, y_val, epochs=100, 
               batch_size=32, checkpoint_path='best_stress_model.h5'):
         """
         Entrena el modelo con callbacks
@@ -339,7 +355,7 @@ class StressDetector:
         print("\n  Entrenamiento completado!")
         return self.history
     
-    def plot_training_history(self, save_path='training_history.png'):
+    def plot_training_history(self, save_path='resultados/training_history.png'):
         """
         Visualiza el historial de entrenamiento
         """
@@ -368,7 +384,7 @@ class StressDetector:
         print(f"\n Gráfica guardada en: {save_path}")
         plt.show()
     
-    def evaluate(self, X_test, y_test, save_path='confusion_matrix.png'):
+    def evaluate(self, X_test, y_test, save_path='resultados/confusion_matrix.png'):
         """
         Evalúa el modelo y muestra métricas detalladas para 3 clases
         """
@@ -493,7 +509,8 @@ class StressDetector:
         for (x, y, w, h) in faces:
             # Extraer ROI del rostro
             face_roi = img[y:y+h, x:x+w]
-            face_rgb = cv2.cvtColor(face_roi, cv2.COLOR_BGR2RGB)
+            face_rgb = self._convert_to_rgb(face_roi)
+            face_rgb = self._convert_to_rgb(face_roi)
             face_resized = cv2.resize(face_rgb, self.img_size)
             face_array = np.expand_dims(face_resized, axis=0) / 255.0
             
@@ -533,12 +550,12 @@ class StressDetector:
         
         return results, img
     
-    def save_model(self, filepath='stress_model.h5'):
+    def save_model(self, filepath='models/stress_model.h5'):
         """Guarda el modelo entrenado"""
         self.model.save(filepath)
         print(f"\n Modelo guardado en: {filepath}")
     
-    def load_model(self, filepath='stress_model.h5'):
+    def load_model(self, filepath='models/stress_model.h5'):
         """Carga un modelo previamente entrenado"""
         try:
             # Intentar cargar con compile=False para evitar problemas de compatibilidad
@@ -549,17 +566,17 @@ class StressDetector:
                 loss='sparse_categorical_crossentropy',
                 metrics=['accuracy']
             )
-            print(f"\n✅ Modelo cargado desde: {filepath}")
+            print(f"\n Modelo cargado desde: {filepath}")
         except Exception as e:
-            print(f"\n❌ Error al cargar modelo: {e}")
+            print(f"\n Error al cargar modelo: {e}")
             print("Intentando método alternativo...")
             # Método alternativo: cargar pesos en un modelo nuevo
             try:
                 self.build_model()
                 self.model.load_weights(filepath)
-                print(f"\n✅ Pesos del modelo cargados desde: {filepath}")
+                print(f"\n Pesos del modelo cargados desde: {filepath}")
             except Exception as e2:
-                print(f"\n❌ Error al cargar pesos: {e2}")
+                print(f"\n Error al cargar pesos: {e2}")
                 raise
 
 

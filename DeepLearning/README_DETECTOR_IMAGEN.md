@@ -244,8 +244,11 @@ flet>=0.24.0
 
 Instalar con:
 ```bash
+py -3.10 -m venv .venv
+.\.venv\Scripts\activate
 pip install -r DeepLearning/requirements.txt
-```
+python train_stress_model.py
+
 
 ---
 
@@ -272,4 +275,17 @@ El detector se integra perfectamente con:
 
 **Desarrollado por**: StressGuard Team  
 **Versión**: 1.0  
-**Fecha**: 2024
+**Fecha**: 2025
+
+
+## Instalar
+En Carpeta Raíz
+#1.- py -3.10 -m venv .venv
+#2.- .\.venv\Scripts\activate
+#3.- pip install -r requirements.txt
+#4.- cd .\DeepLearning\Model_Development\
+#5.- python train_stress_model.py
+## Probar
+cd .\DeepLearning
+
+python predict_stress.py --faces "imagenes_prueba\enojado.png"

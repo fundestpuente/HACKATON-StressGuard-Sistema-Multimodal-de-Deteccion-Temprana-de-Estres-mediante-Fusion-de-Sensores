@@ -31,7 +31,7 @@ env/
 *.weights
 checkpoints/
 saved_models/
-stress_model_final.h5
+
 
 # Jupyter Notebook
 .ipynb_checkpoints/
@@ -138,8 +138,8 @@ tensorboard_logs/
 *.tmp
 *.temp
 .cache/
-__pycache__
-resultados/
+
+
 
 # APK compilados (Flutter)
 *.apk
