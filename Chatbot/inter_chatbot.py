@@ -4,6 +4,8 @@ import threading
 import speech_recognition as sr
 import requests 
 import json
+import time
+
 
 # ================================
 # IMPORTACIÓN DE PROMPTS Y MÓDULOS
@@ -77,7 +79,12 @@ def hablar(texto):
 # APP PRINCIPAL
 # ================================
 def main(page: ft.Page):
-    page.title = "StressWard - Asistente Virtual"
+        # ----------------
+    # VARIABLES DE INICIATIVA
+    # ----------------
+    ultima_interaccion = time.time()
+
+    page.title = "StressGuard_chat - Asistente Virtual"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.window_width = 500
     page.window_height = 700
@@ -125,6 +132,9 @@ def main(page: ft.Page):
     # FUNCIONES CHAT
     # ----------------
     def agregar_mensaje(texto, usuario=False):
+        nonlocal ultima_interaccion
+        ultima_interaccion = time.time()  # ← registra interacción
+
         color = ft.Colors.BLUE_100 if usuario else ft.Colors.GREEN_100
         icono = ft.Icons.PERSON if usuario else ft.Icons.SMART_TOY
         alineacion = ft.MainAxisAlignment.END if usuario else ft.MainAxisAlignment.START
@@ -138,7 +148,7 @@ def main(page: ft.Page):
                                 ft.Row(
                                     [
                                         ft.Icon(icono, size=16),
-                                        ft.Text("Tú" if usuario else "StressWard", weight="bold"),
+                                        ft.Text("Tú" if usuario else "StressGuard_chat", weight="bold"),
                                     ],
                                     tight=True,
                                 ),
@@ -159,10 +169,18 @@ def main(page: ft.Page):
         if not usuario and voz_activa:
             hablar(texto)
 
-    # -----------------------------------------------
+     # -----------------------------------------------
     # INTEGRACIÓN CON OLLAMA + ROUTER PATTERN
     # -----------------------------------------------
     # -----------------------------------------------
+    def iniciativa_bot():
+        if time.time() - ultima_interaccion > 12:
+            agregar_mensaje(
+                "Sigo aquí contigo 🙂\n\n"
+                "¿Quieres contarme un poco más sobre cómo te sientes "
+                "o prefieres que te ayude con algo específico?"
+            )
+
     # INTEGRACIÓN CON OLLAMA + ROUTER PATTERN (CON STREAMING)
     # -----------------------------------------------
     def contactar_ollama(prompt_usuario):
@@ -216,7 +234,7 @@ def main(page: ft.Page):
                             ft.Container(
                                 content=ft.Column(
                                     [
-                                        ft.Row([ft.Icon(ft.Icons.SMART_TOY, size=16), ft.Text("StressWard", weight="bold")], tight=True),
+                                        ft.Row([ft.Icon(ft.Icons.SMART_TOY, size=16), ft.Text("StressGuard_chat", weight="bold")], tight=True),
                                         texto_markdown, # Aquí se escribirá el texto
                                     ]
                                 ),
@@ -264,6 +282,7 @@ def main(page: ft.Page):
         threading.Thread(target=_request, daemon=True).start()
 
     def procesar_envio(e):
+        nonlocal contexto_ollama, modo_guia_activo
         mensaje = txt_mensaje.value.strip()
         if not mensaje:
             return
@@ -292,9 +311,11 @@ def main(page: ft.Page):
 
         contactar_ollama(mensaje)
 
+    txt_mensaje.on_submit = procesar_envio
+
     # ----------------
     # FUNCIONES VOZ
-    # ----------------
+    # ----------------f
     def enviar_por_voz(btn_ref=None):
         if btn_ref:
             btn_ref.icon_color = ft.Colors.RED
@@ -381,7 +402,7 @@ def main(page: ft.Page):
                                                 alignment=ft.alignment.center,
                                             ),
                                             ft.Divider(height=20, color="transparent"),
-                                            ft.Text(spans=[ft.TextSpan("Hola, soy ", ft.TextStyle(size=24, color=ft.Colors.BLACK87)), ft.TextSpan("StressWard", ft.TextStyle(size=24, weight="bold", color=ft.Colors.BLUE_600))]),
+                                            ft.Text(spans=[ft.TextSpan("Hola, soy ", ft.TextStyle(size=24, color=ft.Colors.BLACK87)), ft.TextSpan("StressGuard_chat", ft.TextStyle(size=24, weight="bold", color=ft.Colors.BLUE_600))]),
                                             ft.Text("Tu asistente IA (Potenciado por Ollama)", size=14, color=ft.Colors.GREY_500, italic=True),
                                             ft.Divider(height=30, color="transparent"),
                                             ft.ElevatedButton(
@@ -419,7 +440,7 @@ def main(page: ft.Page):
                     "/chat",
                     [
                         ft.AppBar(
-                            title=ft.Text("Chat con StressWard"), 
+                            title=ft.Text("Chat con StressGuard_chat"), 
                             bgcolor=ft.Colors.BLUE_600, 
                             color=ft.Colors.WHITE,
                             actions=[btn_voz, ft.Container(width=10)]
@@ -439,6 +460,14 @@ def main(page: ft.Page):
                     ]
                 )
             )
+            if not contexto_ollama:
+                agregar_mensaje(
+                    "Hola  Soy StressGuard chat.\n\n"
+                    "Estoy aquí para escucharte.\n"
+                    "¿Cómo te sientes hoy?"
+                )
+
+            
 
         # --- TABLA VIEW ---
         if page.route == "/tabla":
@@ -462,6 +491,8 @@ def main(page: ft.Page):
                     ]
                 )
             )
+ 
+
 
         page.update()
 
