@@ -433,7 +433,19 @@ class StressDetector:
             dict con predicción y confianza
         """
         # Cargar y preprocesar imagen
-        img = cv2.imread(str(image_path))
+        # Usar np.fromfile para manejar rutas con caracteres especiales
+        try:
+            # Método alternativo para rutas con caracteres especiales en Windows
+            img_array_temp = np.fromfile(str(image_path), dtype=np.uint8)
+            img = cv2.imdecode(img_array_temp, cv2.IMREAD_COLOR)
+        except:
+            # Fallback al método tradicional
+            img = cv2.imread(str(image_path))
+        
+        # Validar que la imagen se cargó correctamente
+        if img is None or img.size == 0:
+            raise ValueError(f"No se pudo cargar la imagen: {image_path}. Verifica que sea un archivo de imagen válido (JPG, PNG, BMP).")
+        
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img_resized = cv2.resize(img, self.img_size)
         img_array = np.expand_dims(img_resized, axis=0) / 255.0
@@ -528,8 +540,27 @@ class StressDetector:
     
     def load_model(self, filepath='stress_model.h5'):
         """Carga un modelo previamente entrenado"""
-        self.model = keras.models.load_model(filepath)
-        print(f"\n Modelo cargado desde: {filepath}")
+        try:
+            # Intentar cargar con compile=False para evitar problemas de compatibilidad
+            self.model = keras.models.load_model(filepath, compile=False)
+            # Recompilar el modelo manualmente
+            self.model.compile(
+                optimizer='adam',
+                loss='sparse_categorical_crossentropy',
+                metrics=['accuracy']
+            )
+            print(f"\n✅ Modelo cargado desde: {filepath}")
+        except Exception as e:
+            print(f"\n❌ Error al cargar modelo: {e}")
+            print("Intentando método alternativo...")
+            # Método alternativo: cargar pesos en un modelo nuevo
+            try:
+                self.build_model()
+                self.model.load_weights(filepath)
+                print(f"\n✅ Pesos del modelo cargados desde: {filepath}")
+            except Exception as e2:
+                print(f"\n❌ Error al cargar pesos: {e2}")
+                raise
 
 
 # Función auxiliar para cargar todos los conjuntos de datos

@@ -20,21 +20,52 @@ async def main(page: ft.Page):
     pipeline = load_model()
     print("Modelo cargado exitosamente.")
 
+    # RANGOS REALES DEL DATASET WESAD (basados en análisis estadístico)
+    # Valores iniciales = estado RELAJADO (verificado con 97% confianza sin estrés)
+    # EDA < 0.5 = muy relajado, EDA > 2.0 = estrés
+    # Temp muñeca normal: 32-33°C (más baja que temp corporal 36-37°C)
     configuracion_sensores = [
-        {"nombre": "bvp",   "min": -100.0, "max": 100.0, "res": 0.01,     "inicio": 0.9034},
-        {"nombre": "eda",   "min": 0.0,    "max": 10.0,  "res": 0.01,     "inicio": 2.1356},
-        {"nombre": "temp",  "min": 28.0,   "max": 36.0,  "res": 0.01,     "inicio": 32.7739}
+        {
+            "nombre": "bvp",   
+            "min": -20.0,  
+            "max": 20.0,  
+            "res": 0.1,      
+            "inicio": 2.3,
+            "zona_normal": {"min": -16.5, "max": 16.0},
+            "zona_estres": {"min": -16.5, "max": 17.8}
+        },
+        {
+            "nombre": "eda",   
+            "min": 0.2,    
+            "max": 5.0,   
+            "res": 0.01,     
+            "inicio": 0.4,
+            "zona_normal": {"min": 0.32, "max": 1.0},
+            "zona_estres": {"min": 2.0, "max": 3.87}
+        },
+        {
+            "nombre": "temp",  
+            "min": 31.0,   
+            "max": 34.0,  
+            "res": 0.1,      
+            "inicio": 32.5,
+            "zona_normal": {"min": 31.47, "max": 32.68},
+            "zona_estres": {"min": 32.77, "max": 33.25}
+        }
     ]
 
     valores = {}
+    indicadores_zona = {}
     
-    # Indicador de estado de estrés
+    # Indicador de estado de estrés con probabilidades
     estado_texto = ft.Text("Calculando...", size=24, weight="bold", color=ft.Colors.BLUE)
     estado_icono = ft.Icon(ft.Icons.FAVORITE, size=60, color=ft.Colors.BLUE)
+    probabilidad_texto = ft.Text("", size=16, color=ft.Colors.GREY_700, weight="bold")
     estado_container = ft.Container(
         content=ft.Column([
             estado_icono,
             estado_texto,
+            probabilidad_texto,
             ft.Text("Predicción en tiempo real", size=14, color=ft.Colors.GREY)
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
         bgcolor=ft.Colors.BLUE_50,
@@ -61,7 +92,51 @@ async def main(page: ft.Page):
     def actualizar_valor(nombre, valor):
         valores[nombre].value = f"{valor:.6f}"
         valores[nombre].update()
+        
+        # Actualizar indicador de zona
+        actualizar_indicador_zona(nombre, valor)
+        
         calcular_prediccion()
+    
+    # Función para actualizar indicador de zona según el valor
+    def actualizar_indicador_zona(nombre, valor):
+        conf = next(c for c in configuracion_sensores if c["nombre"] == nombre)
+        
+        # Determinar en qué zona está el valor CON GUÍA CLARA
+        if nombre == "eda":
+            if valor < 1.0:
+                zona_texto = "✅ ZONA NORMAL - Modelo predice: SIN estrés"
+                zona_color = ft.Colors.GREEN
+            elif valor < 2.0:
+                zona_texto = "⚠️ ZONA INTERMEDIA - Puede variar"
+                zona_color = ft.Colors.ORANGE
+            else:
+                zona_texto = "🔴 ZONA DE ESTRÉS - Modelo predice: CON estrés"
+                zona_color = ft.Colors.RED
+        elif nombre == "bvp":
+            # BVP tiene menos impacto, pero valores extremos pueden afectar
+            if -16.5 <= valor <= 16.0:
+                zona_texto = "✅ Rango normal (impacto menor)"
+                zona_color = ft.Colors.GREEN
+            else:
+                zona_texto = "⚠️ Fuera de rango típico"
+                zona_color = ft.Colors.ORANGE
+        else:  # temp
+            # Temp tiene muy poco impacto
+            if 31.5 <= valor <= 32.7:
+                zona_texto = "✅ Normal (impacto mínimo en predicción)"
+                zona_color = ft.Colors.GREEN
+            elif 32.7 < valor <= 33.3:
+                zona_texto = "⚠️ Algo elevada (impacto mínimo)"
+                zona_color = ft.Colors.ORANGE
+            else:
+                zona_texto = "ℹ️ Fuera de rango típico"
+                zona_color = ft.Colors.BLUE
+        
+        # Actualizar el indicador
+        indicadores_zona[nombre].value = zona_texto
+        indicadores_zona[nombre].color = zona_color
+        indicadores_zona[nombre].update()
 
     # Función para calcular predicción
     def calcular_prediccion():
@@ -71,26 +146,38 @@ async def main(page: ft.Page):
             eda = float(valores["eda"].value)
             temp = float(valores["temp"].value)
             
-            # Predecir
+            # Predecir con probabilidades
             prediccion = predict_stress(bvp, temp, eda, pipeline)
+            
+            # Obtener probabilidades directamente del modelo
+            import pandas as pd
+            X = pd.DataFrame([[bvp, eda, temp]], columns=['bvp', 'eda', 'temp'])
+            probabilidades = pipeline.predict_proba(X)[0]
+            prob_sin_estres = probabilidades[0] * 100
+            prob_con_estres = probabilidades[1] * 100
             
             # Actualizar UI según resultado
             if prediccion == 1:
-                estado_texto.value = "⚠️ ESTRESADO"
+                estado_texto.value = "⚠️ CON ESTRÉS"
                 estado_texto.color = ft.Colors.RED
                 estado_icono.name = ft.Icons.WARNING_AMBER
                 estado_icono.color = ft.Colors.RED
                 estado_container.bgcolor = ft.Colors.RED_50
+                probabilidad_texto.value = f"🔴 Probabilidad de estrés: {prob_con_estres:.1f}%"
+                probabilidad_texto.color = ft.Colors.RED_900
             else:
                 estado_texto.value = "✓ SIN ESTRÉS"
                 estado_texto.color = ft.Colors.GREEN
                 estado_icono.name = ft.Icons.FAVORITE
                 estado_icono.color = ft.Colors.GREEN
                 estado_container.bgcolor = ft.Colors.GREEN_50
+                probabilidad_texto.value = f"✅ Probabilidad sin estrés: {prob_sin_estres:.1f}%"
+                probabilidad_texto.color = ft.Colors.GREEN_900
             
             # Actualizar elementos individuales
             estado_texto.update()
             estado_icono.update()
+            probabilidad_texto.update()
             estado_container.update()
             page.update()
             
@@ -99,9 +186,40 @@ async def main(page: ft.Page):
             print(f"Error en predicción: {e}")
             return 0
 
-    # Crear sliders dinámicos
+    # Crear sliders dinámicos con indicadores de zona
     for conf in configuracion_sensores:
-        valores[conf["nombre"]] = ft.Text(str(conf["inicio"]), size=14)
+        valores[conf["nombre"]] = ft.Text(str(conf["inicio"]), size=14, weight="bold")
+        
+        # Crear indicador de zona
+        indicadores_zona[conf["nombre"]] = ft.Text(
+            "✅ Zona Normal", 
+            size=12, 
+            color=ft.Colors.GREEN,
+            weight="bold"
+        )
+        
+        # Crear guía de rangos MÁS CLARA
+        if conf["nombre"] == "eda":
+            guia = ft.Text(
+                "⭐ FACTOR PRINCIPAL: < 1.0 = SIN estrés | > 2.0 = CON estrés",
+                size=11,
+                color=ft.Colors.BLUE_900,
+                weight="bold"
+            )
+        elif conf["nombre"] == "bvp":
+            guia = ft.Text(
+                "Factor secundario: Rango normal -16.5 a 16.0",
+                size=10,
+                color=ft.Colors.GREY_600,
+                italic=True
+            )
+        else:  # temp
+            guia = ft.Text(
+                "Impacto mínimo: La temperatura casi no afecta la predicción",
+                size=10,
+                color=ft.Colors.GREY_600,
+                italic=True
+            )
 
         slider = ft.Slider(
             min=conf["min"],
@@ -115,11 +233,13 @@ async def main(page: ft.Page):
             ft.Container(
                 content=ft.Column([
                     ft.Row([
-                        ft.Text(conf["nombre"], size=15, weight="bold"),
+                        ft.Text(conf["nombre"].upper(), size=15, weight="bold"),
                         valores[conf["nombre"]],
                     ], alignment="spaceBetween"), 
-                    slider
-                ]),
+                    slider,
+                    indicadores_zona[conf["nombre"]],
+                    guia
+                ], spacing=5),
                 bgcolor=ft.Colors.GREY_100,
                 border_radius=10,
                 padding=15
@@ -127,6 +247,10 @@ async def main(page: ft.Page):
         )
     
     page.update()
+    
+    # Inicializar indicadores de zona
+    for conf in configuracion_sensores:
+        actualizar_indicador_zona(conf["nombre"], conf["inicio"])
     
     # Calcular predicción inicial
     calcular_prediccion()

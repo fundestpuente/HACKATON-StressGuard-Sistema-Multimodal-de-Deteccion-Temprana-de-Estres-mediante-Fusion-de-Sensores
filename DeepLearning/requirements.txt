@@ -1,13 +1,16 @@
-# Compatible con Python 3.11
-tensorflow==2.10.1
-keras==2.10.0
-numpy==1.23.5
-pandas==2.2.0
-opencv-python==4.9.0.80
-matplotlib==3.8.2
-seaborn==0.13.1
-scikit-learn==1.4.0
-h5py==3.10.0
+# Compatible con Python 3.14
+# NOTA: TensorFlow no tiene soporte oficial para Python 3.14 aún
+# Usando versiones que funcionan con Python 3.11-3.12
+# Si hay errores, considerar usar Python 3.11 o 3.12
+numpy>=1.26.0
+pandas>=2.2.0
+opencv-python>=4.9.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+scikit-learn>=1.5.0
+h5py>=3.10.0
+Pillow>=10.0.0
+# TensorFlow se instalará manualmente si está disponible para tu versión de Python
 
 
 

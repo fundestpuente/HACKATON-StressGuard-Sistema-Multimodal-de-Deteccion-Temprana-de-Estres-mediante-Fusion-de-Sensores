@@ -19,7 +19,8 @@ python launcher.py
 
 El launcher te permitirá:
 - ✅ Abrir el chatbot manualmente
-- ✅ Iniciar el sistema de detección completo
+- ✅ Detector de estrés por imagen (Deep Learning)
+- ✅ Iniciar el sistema de detección completo (sensores)
 - ✅ Ver el estado de todos los módulos
 - ✅ Detener procesos fácilmente
 
@@ -49,6 +50,8 @@ python inter_chatbot.py
 HACKATON-StressGuard/
 │
 ├── launcher.py                    # 🚀 INTERFAZ PRINCIPAL (INICIAR AQUÍ)
+├── detector_imagen.py             # 📷 Detector de estrés por imagen
+├── entrenar_modelo_imagen.py      # 🧠 Script para entrenar modelo Deep Learning
 ├── INICIAR_STRESSGUARD.bat       # Script de inicio rápido
 ├── README_LAUNCHER.md             # Documentación del launcher
 │
@@ -60,13 +63,19 @@ HACKATON-StressGuard/
 │   ├── chatbot_manager.py        # Gestor de chatbot (instancia única)
 │   ├── receptor_datos.py         # Receptor de señales de estrés
 │   ├── simu_reloj.py            # Simulador de reloj Samsung
-│   ├── stress_model.py          # Modelo de Machine Learning
+│   ├── stress_model.py          # Modelo de Machine Learning (sensores)
 │   ├── requirements.txt         # Dependencias
 │   └── README_CHATBOT_INTELIGENTE.md
 │
 └── DeepLearning/
+    ├── stress_detector_model.py # Clase del modelo Deep Learning
     ├── train_stress_model.py    # Entrenamiento del modelo
-    └── predict_stress.py        # Predicción con modelo
+    ├── predict_stress.py        # Predicción con modelo
+    ├── README_DETECTOR_IMAGEN.md # Documentación completa
+    └── data2/                   # Dataset de imágenes
+        ├── train/
+        ├── valid/
+        └── test/
 ```
 
 ## 🛠️ Instalación
@@ -113,7 +122,16 @@ pip install -r requirements.txt
 - **Voz**: Texto a voz y reconocimiento de voz en español
 - **Router Pattern**: Alterna entre prompt de charla y prompt de guía según el contexto
 
-### 📊 Sistema de Detección
+### � Detector de Estrés por Imagen (Deep Learning)
+
+- **Transfer Learning**: MobileNetV2 con TensorFlow
+- **3 Clases**: Non-Stress, Stress, Neutral
+- **Interfaz Visual**: Upload de fotos con preview
+- **Probabilidades**: Muestra confianza para cada clase
+- **Integración**: Abre chatbot automáticamente si detecta estrés
+- **Local**: Procesamiento 100% local, sin enviar datos
+
+### 📊 Sistema de Detección por Sensores
 
 - **Simulador de Reloj Samsung (Empatica E4)**
   - Sensores: BVP, EDA, Temperatura
@@ -126,13 +144,14 @@ pip install -r requirements.txt
   - Activa el chatbot automáticamente
 
 - **Machine Learning**
-  - Modelo entrenado con scikit-learn
+  - Modelo XGBoost + SMOTE entrenado con WESAD
   - Predicción binaria: Estrés / Sin estrés
+  - Accuracy: 85.7%, Recall: 96.94%
 
 ### 🎨 Launcher Gráfico
 
 - ✅ Interfaz intuitiva con Flet
-- ✅ Control centralizado de todos los módulos
+- ✅ 3 modos: Chatbot, Detector Imagen, Sistema Completo
 - ✅ Indicadores de estado en tiempo real
 - ✅ Gestión automática de procesos
 
@@ -144,7 +163,16 @@ pip install -r requirements.txt
 2. Clic en "Abrir Chatbot"
 3. Conversar libremente
 
-### Escenario 2: Detección completa de estrés
+### Escenario 2: Detección de estrés por imagen
+
+1. Ejecutar `launcher.py`
+2. Clic en "Abrir Detector" (tarjeta morada)
+3. Click en "📷 Seleccionar Imagen"
+4. Elegir una foto facial
+5. Click en "🔍 Analizar Estrés"
+6. Si detecta estrés → Chatbot se abre automáticamente
+
+### Escenario 3: Detección completa por sensores
 
 1. Ejecutar `launcher.py`
 2. Clic en "Iniciar Sistema"
@@ -152,7 +180,7 @@ pip install -r requirements.txt
 4. Cuando se detecte estrés → Chatbot se abre automáticamente
 5. Conversar sobre el estado de estrés
 
-### Escenario 3: Desarrollo/Debugging
+### Escenario 4: Desarrollo/Debugging
 
 1. Ejecutar `receptor_datos.py` manualmente
 2. Ejecutar `simu_reloj.py` manualmente

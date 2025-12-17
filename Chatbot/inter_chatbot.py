@@ -92,22 +92,58 @@ def escuchar_google(callback):
 # ================================
 # TEXTO A VOZ
 # ================================
+
+# Variable global para controlar el warning de voz
+_voz_español_advertido = False
+
 def hablar(texto):
+    """
+    Convierte texto a voz usando pyttsx3
+    Intenta usar voz en español si está disponible
+    """
     def _hablar():
+        global _voz_español_advertido
         try:
             engine = pyttsx3.init()
-            engine.setProperty('rate', 150) 
+            engine.setProperty('rate', 150)  # Velocidad de habla
             
+            # Obtener todas las voces disponibles
             voices = engine.getProperty("voices")
+            voz_español_encontrada = False
+            
+            # Intentar encontrar una voz en español
             for v in voices:
-                if "spanish" in v.name.lower() or "es" in str(v.languages).lower():
+                # Buscar en diferentes lugares
+                nombre_lower = v.name.lower()
+                id_lower = v.id.lower()
+                lang_str = str(v.languages).lower() if v.languages else ""
+                
+                # Palabras clave para detectar español
+                palabras_español = ['spanish', 'español', 'espanol', 'es-', 'es_', 
+                                   'sabina', 'helena', 'laura', 'pablo', 'raul']
+                
+                if any(palabra in nombre_lower or palabra in id_lower or palabra in lang_str 
+                       for palabra in palabras_español):
                     engine.setProperty("voice", v.id)
+                    voz_español_encontrada = True
+                    print(f"🔊 Usando voz: {v.name}")
                     break
             
+            # Si no se encontró voz en español, advertir una sola vez
+            if not voz_español_encontrada and not _voz_español_advertido:
+                print("⚠️ ADVERTENCIA: No se encontró voz en español instalada.")
+                print("   Se usará la voz por defecto del sistema (inglés).")
+                print("   Para instalar voces en español:")
+                print("   - Windows: Configuración > Hora e idioma > Voz > Agregar voces")
+                print("   - O desactiva la voz con el botón 🔊 en el chat")
+                _voz_español_advertido = True
+            
+            # Reproducir el texto
             engine.say(texto)
             engine.runAndWait()
+            
         except Exception as e:
-            print("Error TTS:", e)
+            print(f"❌ Error TTS: {e}")
 
     threading.Thread(target=_hablar, daemon=True).start()
 

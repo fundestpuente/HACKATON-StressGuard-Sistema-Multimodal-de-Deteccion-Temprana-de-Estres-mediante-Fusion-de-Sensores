@@ -7,7 +7,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
 pip-log.txt
 pip-delete-this-directory.txt
 
@@ -20,12 +19,10 @@ env/
 .virtualenv/
 
 # Modelos de Machine Learning (PESADOS)
-# *.pkl  # Modelos pkl se incluyen en el repositorio
-# *.pickle  # Modelos pickle se incluyen en el repositorio
-*.h5
+# Los modelos .pkl se incluyen (son ligeros)
+# Los modelos .h5 se excluyen (son pesados, >10MB)
 *.hdf5
 *.model
-# *.joblib  # Modelos joblib se incluyen en el repositorio
 *.sav
 *.onnx
 *.pb
@@ -34,12 +31,14 @@ env/
 *.weights
 checkpoints/
 saved_models/
+stress_model_final.h5
 
 # Jupyter Notebook
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 .jupyter/
 *.nbconvert.ipynb
+*.ipynb
 
 # Datos y Datasets (PESADOS - no subir datos crudos)
 WESAD/
@@ -48,6 +47,15 @@ WESAD/
 *.rar
 *.7z
 data/raw/
+pruebas/
+
+# Archivos temporales y de desarrollo
+utils/
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
 data/processed/*.csv
 data/processed/*.parquet
 datasets/

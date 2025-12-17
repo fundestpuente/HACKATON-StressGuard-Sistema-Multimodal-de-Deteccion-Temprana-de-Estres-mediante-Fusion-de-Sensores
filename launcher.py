@@ -22,6 +22,7 @@ ML_DIR = BASE_DIR / "MachineLearning"
 CHATBOT_SCRIPT = CHATBOT_DIR / "inter_chatbot.py"
 SIMULADOR_SCRIPT = ML_DIR / "simu_reloj.py"
 RECEPTOR_SCRIPT = ML_DIR / "receptor_datos.py"
+DETECTOR_IMAGEN_SCRIPT = BASE_DIR / "detector_imagen.py"
 
 # Control de procesos
 procesos_activos = {
@@ -103,7 +104,7 @@ def terminar_proceso(proceso, nombre):
 def main(page: ft.Page):
     page.title = "StressGuard - Launcher"
     page.window_width = 600
-    page.window_height = 700
+    page.window_height = 850
     page.window_resizable = False
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 0
@@ -202,6 +203,34 @@ def main(page: ft.Page):
         except Exception as ex:
             print(f"❌ Error: {ex}")
             mostrar_snackbar(f"❌ Error al abrir chatbot: {ex}", ft.Colors.RED_700)
+    
+    def abrir_detector_imagen(e):
+        """Abre el detector de estrés por imagen"""
+        print("\n" + "="*60)
+        print("📷 ABRIENDO DETECTOR DE ESTRÉS POR IMAGEN")
+        print("="*60)
+        
+        try:
+            # Usar Python 3.12 específicamente (tiene TensorFlow)
+            if sys.platform == 'win32':
+                proceso = subprocess.Popen(
+                    ['py', '-3.12', str(DETECTOR_IMAGEN_SCRIPT)],
+                    creationflags=subprocess.CREATE_NEW_CONSOLE,
+                    cwd=str(DETECTOR_IMAGEN_SCRIPT.parent)
+                )
+            else:
+                proceso = subprocess.Popen(
+                    ['python3.12', str(DETECTOR_IMAGEN_SCRIPT)],
+                    cwd=str(DETECTOR_IMAGEN_SCRIPT.parent),
+                    start_new_session=True
+                )
+            
+            print(f"✅ Detector de Imagen iniciado (PID: {proceso.pid})")
+            mostrar_snackbar("✅ Detector de imagen abierto (Python 3.12)", ft.Colors.GREEN_700)
+                
+        except Exception as ex:
+            print(f"❌ Error: {ex}")
+            mostrar_snackbar(f"❌ Error: {ex}", ft.Colors.RED_700)
     
     def iniciar_sistema_completo(e):
         """Inicia el sistema completo: Receptor + Simulador"""
@@ -342,6 +371,48 @@ def main(page: ft.Page):
         )
     )
     
+    # Tarjeta de Detector de Imagen
+    card_detector_imagen = ft.Container(
+        content=ft.Column([
+            ft.Row([
+                ft.Icon(ft.Icons.CAMERA_ALT, size=40, color=ft.Colors.PURPLE_600),
+                ft.Column([
+                    ft.Text("Detector por Imagen", size=20, weight=ft.FontWeight.BOLD),
+                    ft.Text("Deep Learning facial", size=12, color=ft.Colors.GREY_600)
+                ], spacing=2, expand=True)
+            ], spacing=15),
+            ft.Container(height=10),
+            ft.Text(
+                "Sube una fotografía facial para detectar estrés usando Deep Learning. El chatbot se abrirá si se detecta estrés.",
+                size=13,
+                color=ft.Colors.GREY_700
+            ),
+            ft.Container(height=15),
+            ft.ElevatedButton(
+                content=ft.Row([
+                    ft.Icon(ft.Icons.PHOTO_CAMERA, size=18),
+                    ft.Text("Abrir Detector", size=15)
+                ], tight=True, spacing=8),
+                style=ft.ButtonStyle(
+                    bgcolor={"": ft.Colors.PURPLE_600},
+                    color={"": ft.Colors.WHITE},
+                    padding=15
+                ),
+                width=250,
+                on_click=abrir_detector_imagen
+            )
+        ], spacing=5),
+        bgcolor=ft.Colors.WHITE,
+        border=ft.border.all(1, ft.Colors.PURPLE_200),
+        border_radius=15,
+        padding=20,
+        shadow=ft.BoxShadow(
+            spread_radius=1,
+            blur_radius=10,
+            color=ft.Colors.BLACK12
+        )
+    )
+    
     # Tarjeta de Sistema de Detección
     card_sistema = ft.Container(
         content=ft.Column([
@@ -429,6 +500,8 @@ def main(page: ft.Page):
             ft.Container(
                 content=ft.Column([
                     card_chatbot,
+                    ft.Container(height=15),
+                    card_detector_imagen,
                     ft.Container(height=15),
                     card_sistema,
                     ft.Container(height=15),

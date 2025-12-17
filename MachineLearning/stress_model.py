@@ -22,18 +22,20 @@ def save_model(model, scaler, model_path='stress_rf_model.pkl', scaler_path='sca
     print(f"Scaler guardado en {scaler_path}")
 
 # Función para cargar el pipeline completo
-def load_model(model_path='best_wesad_xgboost_no_smote_model.pkl'):
+def load_model(model_path='best_wesad_xgboost_con_smote_model_v2.pkl'):
     """
-    Carga el pipeline completo (StandardScaler + XGBoost).
+    Carga el pipeline completo (StandardScaler + SMOTE + XGBoost).
 
     Parámetros:
     - model_path: Ruta del archivo del pipeline
 
     Retorna:
-    - pipeline: Pipeline completo (scaler + modelo)
+    - pipeline: Pipeline completo (scaler + smote + modelo)
+    
+    NOTA: Requiere sklearn 1.7.1 e imbalanced-learn
     """
     pipeline = joblib.load(model_path)
-    print(f"Pipeline cargado desde {model_path}")
+    print(f"Pipeline CON SMOTE cargado desde {model_path}")
     return pipeline
 
 # Función de inferencia
@@ -44,9 +46,9 @@ def predict_stress(bvp, temp, eda, pipeline):
     - bvp: Señal de volumen de pulso sanguíneo
     - temp: Temperatura
     - eda: Actividad electrodérmica
-    - pipeline: Pipeline completo (scaler + modelo XGBoost)
+    - pipeline: Pipeline completo (scaler + smote + modelo XGBoost)
 
-    Imprime:
+    Retorna:
     - stress = 1 (estrés) o stress = 0 (no estrés)
     """
     import pandas as pd
@@ -54,17 +56,13 @@ def predict_stress(bvp, temp, eda, pipeline):
     # Usar DataFrame con nombres de características para evitar warnings
     features = pd.DataFrame([[bvp, eda, temp]], columns=['bvp', 'eda', 'temp'])
 
-    # El pipeline ya incluye el scaler, solo llamamos predict
+    # El pipeline incluye scaler y SMOTE (solo para fit), luego predice
     prediction = pipeline.predict(features)[0]
     
-    # CORRECCIÓN: El modelo tiene las etiquetas invertidas
-    # Predicción 0 en realidad es estrés (1), predicción 1 es no estrés (0)
-    prediction_corregida = 1 - prediction
-    
     # Imprimir el resultado
-    print(f"stress = {int(prediction_corregida)}")
+    print(f"stress = {int(prediction)}")
     
-    return int(prediction_corregida)
+    return int(prediction)
 
 
 if __name__ == "__main__":

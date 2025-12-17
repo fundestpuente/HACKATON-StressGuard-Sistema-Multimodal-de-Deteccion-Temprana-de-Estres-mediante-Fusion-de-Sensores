@@ -79,14 +79,23 @@ def main():
     print("\n PASO 7: Guardando modelo...")
     detector.save_model('stress_model_final.h5')
     
+    # Copiar el mejor modelo a stress_model.h5 (para detector_imagen.py)
+    import shutil
+    if os.path.exists('best_stress_model.h5'):
+        shutil.copy('best_stress_model.h5', 'stress_model.h5')
+        print("   ✅ Copiado best_stress_model.h5 → stress_model.h5")
+    
     print("\n" + "="*60)
     print(" ENTRENAMIENTO COMPLETADO EXITOSAMENTE")
     print("="*60)
     print("\n Archivos generados:")
     print("   - best_stress_model.h5 (mejor modelo durante entrenamiento)")
+    print("   - stress_model.h5 (para usar en detector)")
     print("   - stress_model_final.h5 (modelo final)")
     print("   - training_history.png (gráficas de entrenamiento)")
     print("   - confusion_matrix.png (matriz de confusión)")
+    print("\n ⚡ El modelo está listo para usar!")
+    print("   Ejecuta: py -3.12 detector_imagen.py")
     
     # 8. Resumen de métricas finales
     test_acc = np.mean(y_test == y_pred)
